@@ -1,20 +1,34 @@
 import { View, StyleSheet, Dimensions } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { Canvas, Fill, Shader, vec, useValue, useTouchHandler, useClock } from "@shopify/react-native-skia";
+import { backgroundEffect } from "@/shaders/background";
+import { useDerivedValue, useSharedValue } from "react-native-reanimated";
 
 const { width, height } = Dimensions.get('window');
 
-const CIRCLE_SIZE = Math.min(width, height) * 0.6;
-
 export default function Background() {
+  const clock = useClock();
+  const center = vec(width / 2, height / 2);
+  const pointer = useSharedValue(vec(0, 0));
+  const onTouch = useTouchHandler({
+    onActive: (e) => {
+      pointer.current = e;
+    },
+  });
+  const uniforms = useDerivedValue(
+    () => ({time: clock.value/100,  resolution: vec(width, height) }),
+    [clock]
+  );
+  
   return (
     <View style={styles.container}>
-      <LinearGradient
-        colors={['#1a237e', '#0d47a1', '#01579b']}
-        style={styles.gradient}
-      >
-        <View style={[styles.circle, styles.topLeft]} />
-        <View style={[styles.circle, styles.bottomRight]} />
-      </LinearGradient>
+      <Canvas style={styles.canvas}>
+        <Fill>
+          <Shader 
+            source={backgroundEffect}
+            uniforms={uniforms}
+          />
+        </Fill>
+      </Canvas>
     </View>
   );
 }
@@ -24,25 +38,14 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: '100%',
     height: '100%',
+    left: 0,
+    top: 0,
+    right: 0,
+    bottom: 0,
   },
-  gradient: {
+  canvas: {
     flex: 1,
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  circle: {
-    width: CIRCLE_SIZE,
-    height: CIRCLE_SIZE,
-    borderRadius: CIRCLE_SIZE / 2,
-    position: 'absolute',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  topLeft: {
-    top: -CIRCLE_SIZE * 0.3,
-    left: -CIRCLE_SIZE * 0.3,
-  },
-  bottomRight: {
-    bottom: -CIRCLE_SIZE * 0.3,
-    right: -CIRCLE_SIZE * 0.3,
-  },
+    width: '100%',
+    height: '100%',
+  }
 });

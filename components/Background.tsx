@@ -15,7 +15,7 @@ export default function Background() {
     },
   });
   const uniforms = useDerivedValue(
-    () => ({time: clock.value/100,  resolution: vec(width, height) }),
+    () => ({ center, pointer: pointer.value, time: clock.value/500,  resolution: vec(width, height) }),
     [clock]
   );
   

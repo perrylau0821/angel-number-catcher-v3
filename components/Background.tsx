@@ -1,4 +1,4 @@
-import { View, StyleSheet, Dimensions } from 'react-native';
+import { View, StyleSheet, Dimensions, Platform } from 'react-native';
 import { Canvas, Fill, Shader, vec, useValue, useTouchHandler, useClock } from "@shopify/react-native-skia";
 import { backgroundEffect } from "@/shaders/background";
 import { useDerivedValue, useSharedValue } from "react-native-reanimated";
@@ -15,12 +15,13 @@ export default function Background() {
     },
   });
   const uniforms = useDerivedValue(
-    () => ({ center, pointer: pointer.value, time: clock.value/500,  resolution: vec(width, height) }),
+    () => ({ center, pointer: pointer.value, time: clock.value/1000,  resolution: vec(width, height) }),
     [clock]
   );
   
   return (
     <View style={styles.container}>
+      {Platform !== 'web' ? 
       <Canvas style={styles.canvas}>
         <Fill>
           <Shader 
@@ -28,7 +29,7 @@ export default function Background() {
             uniforms={uniforms}
           />
         </Fill>
-      </Canvas>
+      </Canvas>: null}
     </View>
   );
 }

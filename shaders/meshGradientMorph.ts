@@ -1,4 +1,3 @@
-
 const meshGradientMorphShader = `
 uniform vec2 resolution;
 uniform float time;
@@ -32,9 +31,24 @@ float filmGrainNoise(in vec2 uv) {
     return length(hash(vec2(uv.x, uv.y)));
 }
 
+vec3 rgb2gray(vec3 color) {
+    float gray = dot(color, vec3(0.299, 0.587, 0.114));
+    return vec3(gray);
+}
+
+// Contrast adjustment function
+vec3 adjustContrast(vec3 color, float contrast) {
+    // Convert to grayscale first
+    vec3 gray = rgb2gray(color);
+    
+    // Apply contrast adjustment
+    return clamp(((gray - 0.5) * contrast + 0.5), 0.0, 1.0);
+}
+
 vec4 main(vec2 pos) {
     vec2 uv = pos/resolution.xy;
-    float aspectRatio = resolution.x/resolution.y;
+    // float aspectRatio = resolution.x/resolution.y;
+    float aspectRatio = 3;
     
     // Transformed uv
     vec2 tuv = uv - 0.5;
@@ -53,13 +67,13 @@ vec4 main(vec2 pos) {
     tuv.x += sin(tuv.y*frequency+speed)/amplitude;
     tuv.y += sin(tuv.x*frequency*1.5+speed)/(amplitude*0.5);
     
-    // Light gradient colors
+    // Light gradient colors with increased contrast
     vec3 amberYellow = vec3(299.0, 186.0, 137.0) / 255.0;
     vec3 deepBlue = vec3(49.0, 98.0, 238.0) / 255.0;
     vec3 pink = vec3(246.0, 146.0, 146.0) / 255.0;
     vec3 blue = vec3(89.0, 181.0, 243.0) / 255.0;
     
-    // Dark gradient colors
+    // Dark gradient colors with increased contrast
     vec3 purpleHaze = vec3(105.0, 49.0, 245.0) / 255.0;
     vec3 swampyBlack = vec3(32.0, 42.0, 50.0) / 255.0;
     vec3 persimmonOrange = vec3(233.0, 51.0, 52.0) / 255.0;
@@ -79,9 +93,22 @@ vec4 main(vec2 pos) {
     
     vec3 color = mix(layer1, layer2, smoothstep(0.5, -0.3, tuv.y));
 
-    // Apply film grain
-    float filmGrainIntensity = 0.05;
+    // Apply film grain with increased intensity
+    float filmGrainIntensity = 0.15; // Increased from 0.05
     color = color - filmGrainNoise(uv) * filmGrainIntensity;
+    
+    // Convert to grayscale
+    color = rgb2gray(color);
+    
+    // Apply contrast adjustment
+    float contrastLevel = 1.2; // Adjust this value to control contrast (1.0 = normal, >1.0 = more contrast)
+    color = adjustContrast(color, contrastLevel);
+
+    // lighter
+    color -= vec3(0.2);
+    
+    // Apply additional contrast through power function
+    color = pow(color, vec3(1.2)); // Adds more punch to the highlights
     
     return vec4(color, 1.0);
 }

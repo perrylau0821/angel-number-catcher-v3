@@ -1,4 +1,5 @@
 import { View, Text, StyleSheet } from 'react-native';
+import { colors, typography } from '@/theme';
 
 export default function SettingsScreen() {
   return (
@@ -15,7 +16,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   text: {
-    fontSize: 18,
-    color:'white'
+    fontSize: typography.size.lg,
+    color: colors.text.primary,
   },
 });

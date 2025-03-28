@@ -9,4 +9,4 @@ if (!meshGradientMorphShader) {
   throw new Error('Failed to load shader source');
 }
 
-export const backgroundEffect = Skia.RuntimeEffect.Make(starDust)!;
+export const backgroundEffect = Skia.RuntimeEffect.Make(meshGradientMorphShader)!;

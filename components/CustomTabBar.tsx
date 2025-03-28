@@ -1,23 +1,27 @@
-import { View, TouchableOpacity, StyleSheet, Text, Platform } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { BlurView } from 'expo-blur';
 import { Map, Backpack, Book as BookDiary, User } from 'lucide-react-native';
 import Animated, { 
   useAnimatedStyle, 
   withSpring,
-  interpolateColor,
-  useDerivedValue
+  useDerivedValue,
+  interpolate,
+  withRepeat,
+  withSequence,
+  withTiming,
+  Easing
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, spacing, typography } from '@/theme';
+import { colors, spacing } from '@/theme';
 import { Video as LucideIcon } from 'lucide-react-native';
+import * as Haptics from 'expo-haptics';
 
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
 interface Tab {
   name: string;
   icon: LucideIcon;
-  label: string;
 }
 
 interface TabContentProps {
@@ -29,56 +33,96 @@ export default function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   
   const tabs = [
-    { name: 'index', icon: Map, label: 'Records' },
-    { name: 'collection', icon: Backpack, label: 'Collection' },
-    { name: 'statistics', icon: BookDiary, label: 'Statistics' },
-    { name: 'settings', icon: User, label: 'Settings' }
+    { name: 'index', icon: Map },
+    { name: 'collection', icon: Backpack },
+    { name: 'statistics', icon: BookDiary },
+    { name: 'settings', icon: User }
   ];
+
+  const handleTabPress = (tab: Tab, isActive: boolean) => {
+    const event = navigation.emit({
+      type: 'tabPress',
+      target: tab.name,
+      canPreventDefault: true,
+    });
+
+    if (!isActive && !event.defaultPrevented) {
+      // Only trigger haptics on non-web platforms
+      if (Platform.OS !== 'web') {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+      }
+      navigation.navigate(tab.name);
+    }
+  };
  
   const TabContent = ({ tab, index }: TabContentProps) => {
     const Icon = tab.icon;
     const isActive = state.index === index;
     
     const animation = useDerivedValue(() => {
-      return isActive ? 1 : 0;
+      return withSpring(isActive ? 1 : 0, {
+        mass: 1,
+        damping: 15,
+        stiffness: 120,
+      });
+    }, [isActive]);
+
+    const pulseAnimation = useDerivedValue(() => {
+      if (!isActive) return 0;
+      return withRepeat(
+        withSequence(
+          withTiming(1, {
+            duration: 1200,
+            easing: Easing.bezier(0.4, 0, 0.2, 1),
+          }),
+          withTiming(0.2, {
+            duration: 1200,
+            easing: Easing.bezier(0.4, 0, 0.2, 1),
+          })
+        ),
+        -1,
+        true
+      );
     }, [isActive]);
 
     const animatedStyles = useAnimatedStyle(() => {
+      const opacity = interpolate(animation.value, [0, 1], [0.7, 1]);
+      const scale = interpolate(animation.value, [0, 1], [1, 1.1]);
+      
+      if (!isActive) {
+        return {
+          opacity,
+          transform: [{ scale }],
+        };
+      }
+      
+      const shadowRadius = interpolate(
+        pulseAnimation.value,
+        [0.2, 0.8],
+        [3, 6]  // Increased shadow radius range
+      );
+
       return {
-        opacity: withSpring(isActive ? 1 : 0.7),
+        opacity,
+        transform: [{ scale }],
+        shadowOpacity : 1,
+        shadowRadius,
+        shadowColor: colors.shadow.light,
+        shadowOffset: { width: 0, height: 4 },
+        elevation: shadowRadius, // For Android
       };
     });
 
     return (
       <AnimatedTouchable
         style={[styles.tab, animatedStyles]}
-        onPress={() => {
-          const event = navigation.emit({
-            type: 'tabPress',
-            target: tab.name,
-            canPreventDefault: true,
-          });
-
-          if (!isActive && !event.defaultPrevented) {
-            navigation.navigate(tab.name);
-          }
-        }}
+        onPress={() => handleTabPress(tab, isActive)}
       >
         <Icon
-          size={18}
+          size={28}
           color={isActive ? colors.text.primary : colors.text.secondary}
-          style={[
-            styles.icon,
-            isActive && styles.activeIcon
-          ]}
+          style={styles.icon}
         />
-        <Text style={[
-          styles.label,
-          { color: isActive ? colors.text.primary : colors.text.secondary },
-          isActive && styles.activeLabel
-        ]}>
-          {tab.label}
-        </Text>
       </AnimatedTouchable>
     );
   };
@@ -143,43 +187,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
-    gap: spacing.sm,
+    gap: spacing.md,
   },
   tab: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.md,
+    padding: spacing.sm,
     borderRadius: spacing.md,
   },
   icon: {
-    marginBottom: 2,
-  },
-  activeIcon: {
-    shadowColor: colors.shadow.light,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 10,
-    ...Platform.select({
-      web: {
-        filter: 'drop-shadow(0 0 10px #e0e5d8dd)',
-      }
-    })
-  },
-  label: {
-    fontSize: 10,
-    fontWeight: typography.weight.semibold,
-    textAlign: 'center',
-  },
-  activeLabel: {
-    shadowColor: colors.shadow.light,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 10,
-    ...Platform.select({
-      web: {
-        filter: 'drop-shadow(0 0 10px rgba(255, 255, 255, 0.8))',
-      }
-    })
+    marginBottom: 0,
   }
 });

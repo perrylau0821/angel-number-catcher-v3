@@ -117,6 +117,7 @@ export default function CustomTabBar({ state, navigation }: BottomTabBarProps) {
       <AnimatedTouchable
         style={[styles.tab, animatedStyles]}
         onPress={() => handleTabPress(tab, isActive)}
+       
       >
         <Icon
           size={28}

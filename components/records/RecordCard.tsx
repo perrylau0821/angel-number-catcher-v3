@@ -1,173 +1,309 @@
-import { View, Text, Image, StyleSheet } from 'react-native';
-import { CircleCheck as CheckCircle2 } from 'lucide-react-native';
+import { View, Text, StyleSheet, useWindowDimensions, Platform } from 'react-native';
+import { Image } from 'expo-image';
 import { colors, spacing, typography } from '@/theme';
 import { ProcessedRecord } from '@/data/mock';
 import { getPatternLabel } from '@/utils/patterns';
+import { Star } from '@/assets/svg';
+import { OutlinedText } from '@/components/OutlinedText';
+import FlipCard from 'react-native-flip-card';
+import { CircleCheck as CheckCircle2 } from 'lucide-react-native';
+import { useState, useRef, useEffect } from 'react';
+import MarqueeText from 'react-native-marquee';
+import * as Haptics from 'expo-haptics';
 
 interface RecordCardProps {
   record: ProcessedRecord;
 }
 
+// Pre-load all images
+const cardBackground = require('@/assets/images/card-background-dark.png');
+const blurhash = '|rF?hV%2WCj[ayj[a|j[az_NaeWBj@ayfRayfQfQM{M|azj[azf6fQfQfQIpWXofj[ayj[j[fQayWCoeoeaya}j[ayfQa{oLj?j[WVj[ayayj[fQoff7azayj[ayj[j[ayofayayayj[fQj[ayayj[ayfjj[j[ayjuayj[';
+
+const TitleComponent = ({ text, style, containerWidth }) => {
+  return (
+    <View style={styles.titleContainer}>
+      <MarqueeText
+        style={style}
+        speed={0.2}
+        numberOfLines={1}
+        marqueeOnStart={true}
+        loop={true}
+        delay={0}
+      >
+        {text}
+      </MarqueeText>
+    </View>
+  );
+};
+
 export function RecordCard({ record }: RecordCardProps) {
-  return (
-    <View style={styles.container}>
-      <RecordHeader 
-        angelNumber={record.angelNumber} 
-        isProved={record.isProved} 
-      />
-      {record.photoUrl && (
-        <RecordImage photoUrl={record.photoUrl} />
-      )}
-      <RecordContent 
-        title={record.title}
-        description={record.description}
-        pattern={record.pattern}
-      />
-      <RecordFooter 
-        count={record.count}
-        timestamp={record.timestamp}
-      />
-    </View>
-  );
-}
+  const { width: windowWidth } = useWindowDimensions();
+  const cardWidth = windowWidth - (spacing.xl * 2);
+  const cardHeight = (cardWidth * 149) / 371;
+  const [isFlipped, setIsFlipped] = useState(false);
+  const titleContainerWidth = cardWidth - spacing.lg * 2 - 80; // Subtract padding and number width
 
-interface RecordHeaderProps {
-  angelNumber: string;
-  isProved: boolean;
-}
+  const handleFlipStart = (isFlippingBack: boolean) => {
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+    setIsFlipped(!isFlippingBack);
+  };
 
-function RecordHeader({ angelNumber, isProved }: RecordHeaderProps) {
+  const containerStyle = [
+    styles.container,
+    { 
+      width: cardWidth, 
+      height: cardHeight,
+      ...(Platform.OS === 'ios' && {
+        shadowOpacity: 0.3,
+        shadowRadius: 20,
+        shadowOffset: {height:-10}
+      })
+    },
+  ];
+
+  const webGlowStyle = Platform.OS === 'web' ? {
+    filter: `drop-shadow(0 0 20px ${colors.shadow.light})`
+  } : {};
+
   return (
-    <View style={styles.header}>
-      <View style={styles.titleContainer}>
-        <Text style={styles.title}>Angel Number {angelNumber}</Text>
-        {isProved && (
-          <CheckCircle2 
-            size={16} 
-            color={colors.text.primary} 
-            style={styles.provedIcon}
+    <View style={[containerStyle, webGlowStyle]}>
+      <FlipCard
+        style={styles.flipCard}
+        friction={100}
+        perspective={1000}
+        flipHorizontal={true}
+        flipVertical={false}
+        clickable={true}
+        useNativeDriver={true}
+        onFlipStart={handleFlipStart}
+      >
+        {/* Face Side */}
+        <View style={[styles.cardSide, styles.face]}>
+          <Image 
+            source={cardBackground}
+            style={styles.backgroundImage}
+            contentFit="cover"
+            transition={200}
+            placeholder={blurhash}
+            cachePolicy="memory-disk"
           />
-        )}
-      </View>
-    </View>
-  );
-}
+          <View style={styles.faceContent}>
+            <View style={styles.header}>
+              <TitleComponent 
+                text={record.title} 
+                style={styles.title} 
+                containerWidth={titleContainerWidth}
+              />
+              <OutlinedText
+                text={record.angelNumber}
+                fontSize={22}
+                fontFamily="ClashDisplay-Medium"
+                style={styles.headerNumber}
+              />
+            </View>
 
-interface RecordImageProps {
-  photoUrl: string;
-}
+            <View style={styles.footer}>
+              <View style={styles.footerLeft}>
+                <View style={styles.footerNumberWrapper}>
+                  <Text style={styles.footerNumber}>{record.angelNumber}</Text>
+                  <View style={styles.starContainer}>
+                    <Star fill={colors.text.primary} strokeWidth={0.5} glow />
+                  </View>
+                </View>
+              </View>
+              <View style={styles.footerRight}>
+                <View style={styles.countContainer}>
+                  <OutlinedText
+                    text={`×${record.count}`}
+                    fontSize={24}
+                    fontFamily="PPEditorialOld-Italic"
+                    style={styles.count}
+                  />
+                </View>
+                <View style={styles.patternContainer}>
+                  <Text style={styles.pattern}>{getPatternLabel(record.pattern)}</Text>
+                </View>
+              </View>
+            </View>
+          </View>
+        </View>
 
-function RecordImage({ photoUrl }: RecordImageProps) {
-  return (
-    <View style={styles.imageContainer}>
-      <Image 
-        source={{ uri: photoUrl }} 
-        style={styles.image}
-        resizeMode="cover"
-      />
-    </View>
-  );
-}
+        {/* Back Side */}
+        <View style={[styles.cardSide, styles.back]}>
+          <Image 
+            source={cardBackground}
+            style={styles.backgroundImage}
+            contentFit="cover"
+            transition={200}
+            placeholder={blurhash}
+            cachePolicy="memory-disk"
+          />
+          <View style={styles.backContent}>
+            {/* Background Number */}
+            <View style={styles.backgroundNumber}>
+              <OutlinedText
+                text={record.angelNumber}
+                fontSize={140}
+                fontFamily="ClashDisplay-Medium"
+                strokeWidth={1}
+              />
+            </View>
 
-interface RecordContentProps {
-  title: string;
-  description: string;
-  pattern: 'alternative' | 'repeating' | 'custom';
-}
-
-function RecordContent({ title, description, pattern }: RecordContentProps) {
-  return (
-    <>
-      <Text style={styles.keywords}>{title}</Text>
-      <Text style={styles.description}>{description}</Text>
-      <Text style={styles.pattern}>{getPatternLabel(pattern)}</Text>
-    </>
-  );
-}
-
-interface RecordFooterProps {
-  count: number;
-  timestamp: string;
-}
-
-function RecordFooter({ count, timestamp }: RecordFooterProps) {
-  return (
-    <View style={styles.footer}>
-      <Text style={styles.count}>x {count}</Text>
-      <Text style={styles.timestamp}>
-        {new Date(timestamp).toLocaleDateString()}
-      </Text>
+            <View style={styles.backHeader}>
+              <TitleComponent 
+                text={record.title} 
+                style={styles.backTitle} 
+                containerWidth={titleContainerWidth}
+              />
+              {record.isProved && (
+                <View style={styles.proofContainer}>
+                  <CheckCircle2 
+                    size={20} 
+                    color={colors.text.primary}
+                  />
+                </View>
+              )}
+            </View>
+            
+            <Text style={styles.description}>{record.description}</Text>
+          </View>
+        </View>
+      </FlipCard>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: colors.background.glass.dark,
-    padding: spacing.lg,
     marginVertical: spacing.sm,
-    borderRadius: spacing.md,
+    shadowColor: colors.shadow.light,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 20,
+  },
+  flipCard: {
+    flex: 1,
+  },
+  cardSide: {
+    flex: 1,
+    overflow: 'hidden',
+    backgroundColor: colors.background.glass.dark,
+  },
+  face: {
+    backfaceVisibility: 'hidden',
+  },
+  back: {
+    backfaceVisibility: 'hidden',
+  },
+  backgroundImage: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+    opacity: 0.8,
+  },
+  faceContent: {
+    flex: 1,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.lg,
+    paddingTop: spacing.sm,
+    justifyContent: 'space-between',
+  },
+  backContent: {
+    flex: 1,
+    padding: spacing.xl,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
   },
   titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flex: 1,
+    marginRight: spacing.md,
   },
   title: {
-    fontSize: typography.size.lg,
+    fontFamily: typography.family.editorialUltralightItalic,
+    fontSize: 20,
     color: colors.text.primary,
-    fontWeight: typography.weight.semibold,
   },
-  provedIcon: {
-    marginLeft: spacing.xs,
-  },
-  imageContainer: {
-    width: '100%',
-    height: 200,
-    marginBottom: spacing.md,
-    borderRadius: spacing.sm,
-    overflow: 'hidden',
-  },
-  image: {
-    width: '100%',
-    height: '100%',
-  },
-  keywords: {
-    fontSize: typography.size.md,
-    color: colors.text.primary,
-    fontWeight: typography.weight.medium,
-    marginBottom: spacing.xs,
-  },
-  description: {
-    fontSize: typography.size.sm,
-    color: colors.text.primary,
-    marginBottom: spacing.sm,
-    lineHeight: typography.size.md * 1.4,
-  },
-  pattern: {
-    fontSize: typography.size.sm,
-    color: colors.text.secondary,
-    fontStyle: 'italic',
-    marginBottom: spacing.md,
+  headerNumber: {
+    alignSelf: 'flex-start',
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: spacing.sm,
+    alignItems: 'flex-end',
+  },
+  footerLeft: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  footerNumberWrapper: {
+    position: 'relative',
+    flexDirection: 'row',
+    marginBottom: 0
+  },
+  footerNumber: {
+    fontFamily: typography.family.displayMedium,
+    fontSize: 74,
+    color: colors.text.primary,
+    lineHeight: 74,
+    top: 18
+  },
+  starContainer: {
+    left: -24,
+    top: 14,
+  },
+  footerRight: {
+    alignItems: 'flex-end',
+    justifyContent: 'flex-end',
+  },
+  countContainer: {
+    marginBottom: spacing.sm,
   },
   count: {
-    fontSize: typography.size.sm,
-    color: colors.text.secondary,
-    fontWeight: typography.weight.medium,
+    alignSelf: 'flex-end',
   },
-  timestamp: {
-    fontSize: typography.size.xs,
-    color: colors.text.secondary,
+  patternContainer: {
+    borderWidth: 0.3,
+    borderColor: colors.text.primary,
+    backgroundColor: 'transparent',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: spacing.md,
+  },
+  pattern: {
+    fontFamily: typography.family.displayRegular,
+    fontSize: 8,
+    color: colors.text.primary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  backgroundNumber: {
+    position: 'absolute',
+    right: -12 -0,
+    bottom: -24 -36,
+    opacity: 0.6
+  },
+  backHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    marginBottom: spacing.sm,
+  },
+  backTitle: {
+    fontFamily: typography.family.editorialUltralightItalic,
+    fontSize: 24,
+    color: colors.text.primary,
+    lineHeight: 28,
+  },
+  proofContainer: {
+    marginTop: spacing.xs,
+  },
+  description: {
+    fontFamily: typography.family.condensedLight,
+    fontSize: 12,
+    color: colors.text.primary,
+    lineHeight: 14,
   },
 });

@@ -1,7 +1,7 @@
 export const colors = {
   text: {
-    primary: '#e0dfd5',
-    secondary: '#8E8E93',
+    primary: '#E8E3D5',    // Warmer, beige-ish white
+    secondary: '#A8A49B',  // Warmer, beige-ish gray
   },
   background: {
     primary: '#000000',
@@ -10,6 +10,6 @@ export const colors = {
     }
   },
   shadow: {
-    light: '#e0dfd5',
+    light: '#E8E3D5',  // Updated to match primary text color
   }
 } as const;

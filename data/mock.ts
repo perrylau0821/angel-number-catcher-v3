@@ -15,43 +15,43 @@ export interface DBRecord {
 const angelNumberDescriptions = [
   {
     number: "111",
-    title: "manifestation, alignment, opportunity",
+    title: "Manifestation, Alignment, Opportunity",
     description: "A powerful sign of manifestation and alignment. Your thoughts are materializing rapidly, stay focused on your goals.",
     pattern: "repeating" as const
   },
   {
     number: "123",
-    title: "progress, growth, forward movement",
+    title: "Progress, Growth, Forward Movement",
     description: "A sign of natural progression and positive movement in your life. Trust the journey ahead.",
     pattern: "alternative" as const
   },
   {
     number: "333",
-    title: "creativity, growth, expansion",
+    title: "Creativity, Growth, Expansion",
     description: "The Ascended Masters are with you, supporting your creative endeavors and personal growth.",
     pattern: "repeating" as const
   },
   {
     number: "1221",
-    title: "balance, mirror, reflection",
+    title: "Balance, Mirror, Reflection",
     description: "A mirror number indicating balance between the material and spiritual worlds.",
     pattern: "alternative" as const
   },
   {
     number: "777",
-    title: "spiritual, wisdom, inner-knowing",
+    title: "Spiritual, Wisdom, Inner-Knowing",
     description: "A deeply spiritual number signifying divine wisdom and spiritual awakening.",
     pattern: "repeating" as const
   },
   {
     number: "1234",
-    title: "sequence, order, progression",
+    title: "Sequence, Order, Progression",
     description: "Natural progression and divine timing in your life path.",
     pattern: "alternative" as const
   },
   {
     number: "911",
-    title: "lightwork, service, awakening",
+    title: "Lightwork, Service, Awakening",
     description: "A call to spiritual service and awakening to your soul's mission.",
     pattern: "custom" as const
   }

@@ -1,13 +1,13 @@
-import { View, Text, StyleSheet, useWindowDimensions, Platform } from 'react-native';
+import { View, Text, StyleSheet, useWindowDimensions, Platform, Pressable } from 'react-native';
 import { Image } from 'expo-image';
 import { colors, spacing, typography } from '@/theme';
 import { ProcessedRecord } from '@/data/mock';
 import { getPatternLabel } from '@/utils/patterns';
 import { Star } from '@/assets/svg';
 import { OutlinedText } from '@/components/OutlinedText';
-import FlipCard from 'react-native-flip-card';
+import { FlipCard } from '@/components/FlipCard';
 import { CircleCheck as CheckCircle2 } from 'lucide-react-native';
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import MarqueeText from 'react-native-marquee';
 import * as Haptics from 'expo-haptics';
 
@@ -17,6 +17,7 @@ interface RecordCardProps {
 
 // Pre-load all images
 const cardBackground = require('@/assets/images/card-background-dark.png');
+const cardGrain = require('@/assets/images/card-grain.png');
 const blurhash = '|rF?hV%2WCj[ayj[a|j[az_NaeWBj@ayfRayfQfQM{M|azj[azf6fQfQfQIpWXofj[ayj[j[fQayWCoeoeaya}j[ayfQa{oLj?j[WVj[ayayj[fQoff7azayj[ayj[j[ayofayayayj[fQj[ayayj[ayfjj[j[ayjuayj[';
 
 const TitleComponent = ({ text, style, containerWidth }) => {
@@ -47,7 +48,6 @@ export function RecordCard({ record }: RecordCardProps) {
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-    setIsFlipped(!isFlippingBack);
   };
 
   const containerStyle = [
@@ -56,7 +56,7 @@ export function RecordCard({ record }: RecordCardProps) {
       width: cardWidth, 
       height: cardHeight,
       ...(Platform.OS === 'ios' && {
-        shadowOpacity: 0.3,
+        shadowOpacity: 0.15,
         shadowRadius: 20,
         shadowOffset: {height:-10}
       })
@@ -67,111 +67,129 @@ export function RecordCard({ record }: RecordCardProps) {
     filter: `drop-shadow(0 0 20px ${colors.shadow.light})`
   } : {};
 
-  return (
-    <View style={[containerStyle, webGlowStyle]}>
-      <FlipCard
-        style={styles.flipCard}
-        friction={100}
-        perspective={1000}
-        flipHorizontal={true}
-        flipVertical={false}
-        clickable={true}
-        useNativeDriver={true}
-        onFlipStart={handleFlipStart}
-      >
-        {/* Face Side */}
-        <View style={[styles.cardSide, styles.face]}>
-          <Image 
-            source={cardBackground}
-            style={styles.backgroundImage}
-            contentFit="cover"
-            transition={200}
-            placeholder={blurhash}
-            cachePolicy="memory-disk"
+  const RegularContent = (
+    <View style={[styles.cardSide, styles.face]}>
+      <Image 
+        source={cardBackground}
+        style={styles.backgroundImage}
+        contentFit="cover"
+        transition={200}
+        placeholder={blurhash}
+        cachePolicy="memory-disk"
+      />
+      <Image 
+        source={cardGrain}
+        style={styles.backgroundImageGrain}
+        contentFit="cover"
+        transition={200}
+        placeholder={blurhash}
+        cachePolicy="memory-disk"
+      />
+      <View style={styles.faceContent}>
+        <View style={styles.header}>
+          <TitleComponent 
+            text={record.title} 
+            style={styles.title} 
+            containerWidth={titleContainerWidth}
           />
-          <View style={styles.faceContent}>
-            <View style={styles.header}>
-              <TitleComponent 
-                text={record.title} 
-                style={styles.title} 
-                containerWidth={titleContainerWidth}
-              />
-              <OutlinedText
-                text={record.angelNumber}
-                fontSize={22}
-                fontFamily="ClashDisplay-Medium"
-                style={styles.headerNumber}
-              />
-            </View>
+          <OutlinedText
+            text={record.angelNumber}
+            fontSize={22}
+            fontFamily="ClashDisplay-Medium"
+            style={styles.headerNumber}
+          />
+        </View>
 
-            <View style={styles.footer}>
-              <View style={styles.footerLeft}>
-                <View style={styles.footerNumberWrapper}>
-                  <Text style={styles.footerNumber}>{record.angelNumber}</Text>
-                  <View style={styles.starContainer}>
-                    <Star fill={colors.text.primary} strokeWidth={0.5} glow />
-                  </View>
-                </View>
-              </View>
-              <View style={styles.footerRight}>
-                <View style={styles.countContainer}>
-                  <OutlinedText
-                    text={`×${record.count}`}
-                    fontSize={24}
-                    fontFamily="PPEditorialOld-Italic"
-                    style={styles.count}
-                  />
-                </View>
-                <View style={styles.patternContainer}>
-                  <Text style={styles.pattern}>{getPatternLabel(record.pattern)}</Text>
-                </View>
+        <View style={styles.footer}>
+          <View style={styles.footerLeft}>
+            <View style={styles.footerNumberWrapper}>
+              <Text style={styles.footerNumber}>{record.angelNumber}</Text>
+              <View style={styles.starContainer}>
+                <Star fill={colors.text.primary} strokeWidth={0.5} glow />
               </View>
             </View>
           </View>
-        </View>
-
-        {/* Back Side */}
-        <View style={[styles.cardSide, styles.back]}>
-          <Image 
-            source={cardBackground}
-            style={styles.backgroundImage}
-            contentFit="cover"
-            transition={200}
-            placeholder={blurhash}
-            cachePolicy="memory-disk"
-          />
-          <View style={styles.backContent}>
-            {/* Background Number */}
-            <View style={styles.backgroundNumber}>
+          <View style={styles.footerRight}>
+            <View style={styles.countContainer}>
               <OutlinedText
-                text={record.angelNumber}
-                fontSize={140}
-                fontFamily="ClashDisplay-Medium"
-                strokeWidth={1}
+                text={`×${record.count}`}
+                fontSize={24}
+                fontFamily="PPEditorialOld-Italic"
+                style={styles.count}
               />
             </View>
-
-            <View style={styles.backHeader}>
-              <TitleComponent 
-                text={record.title} 
-                style={styles.backTitle} 
-                containerWidth={titleContainerWidth}
-              />
-              {record.isProved && (
-                <View style={styles.proofContainer}>
-                  <CheckCircle2 
-                    size={20} 
-                    color={colors.text.primary}
-                  />
-                </View>
-              )}
+            <View style={styles.patternContainer}>
+              <Text style={styles.pattern}>{getPatternLabel(record.pattern)}</Text>
             </View>
-            
-            <Text style={styles.description}>{record.description}</Text>
           </View>
         </View>
-      </FlipCard>
+      </View>
     </View>
+  );
+
+  const FlippedContent = (
+    <View style={[styles.cardSide, styles.back]}>
+      <Image 
+        source={cardBackground}
+        style={styles.backgroundImage}
+        contentFit="cover"
+        transition={200}
+        placeholder={blurhash}
+        cachePolicy="memory-disk"
+      />
+      <Image 
+        source={cardGrain}
+        style={styles.backgroundImageGrain}
+        contentFit="cover"
+        transition={200}
+        placeholder={blurhash}
+        cachePolicy="memory-disk"
+      />
+      <View style={styles.backContent}>
+        <View style={styles.backgroundNumber}>
+          <OutlinedText
+            text={record.angelNumber}
+            fontSize={140}
+            fontFamily="ClashDisplay-Medium"
+            strokeWidth={1}
+          />
+        </View>
+
+        <View style={styles.backHeader}>
+          <TitleComponent 
+            text={record.title} 
+            style={styles.backTitle} 
+            containerWidth={titleContainerWidth}
+          />
+          {record.isProved && (
+            <View style={styles.proofContainer}>
+              <CheckCircle2 
+                size={20} 
+                color={colors.text.primary}
+              />
+            </View>
+          )}
+        </View>
+        
+        <Text style={styles.description}>{record.description}</Text>
+      </View>
+    </View>
+  );
+
+  return (
+    <Pressable 
+      style={[containerStyle, webGlowStyle]}
+      onPress={() => setIsFlipped(!isFlipped)}
+    >
+      <FlipCard
+        isFlipped={isFlipped}
+        duration={500}
+        direction="y"
+        onFlipStart={handleFlipStart}
+        RegularContent={RegularContent}
+        FlippedContent={FlippedContent}
+      />
+    </Pressable>
   );
 }
 
@@ -181,9 +199,6 @@ const styles = StyleSheet.create({
     shadowColor: colors.shadow.light,
     shadowOffset: { width: 0, height: 0 },
     elevation: 20,
-  },
-  flipCard: {
-    flex: 1,
   },
   cardSide: {
     flex: 1,
@@ -200,7 +215,13 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: '100%',
     height: '100%',
-    opacity: 0.8,
+    opacity: 1,
+  },
+  backgroundImageGrain: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+    opacity: 0.2,
   },
   faceContent: {
     flex: 1,
